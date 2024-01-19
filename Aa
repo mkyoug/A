@@ -1,0 +1,30 @@
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
+import random
+
+class RequestHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        parsed_path = urlparse(self.path)
+        query_components = parse_qs(parsed_path.query)
+        list_arg = query_components.get('list', [''])[0]
+        list_ = [int(i) for i in list_arg.split(',')]
+        random.shuffle(list_)
+        groups = [[] for _ in range(4)]
+        groups.extend([[] for _ in range(2)])
+        for i in range(len(list_)):
+            groups[i % 4].append(list_[i])
+        response = ', '.join([' '.join(map(str, group)) for group in groups])
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(response.encode())
+
+def run(server_class=HTTPServer, handler_class=RequestHandler):
+    server_address = ('', 8000) # Use HTTPS server address here
+    httpd = server_class(server_address, handler_class)
+    print(f'Starting httpd on http://localhost:8000')
+    httpd.serve_forever()
+
+if __name__ == '__main__':
+    run()
